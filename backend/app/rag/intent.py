@@ -38,12 +38,17 @@ COLLEGE_SPECIFIC_KEYWORDS = {
     "iat", "internal", "assessment", "exam", "examination", "semester", "syllabus",
     "calendar", "bus", "transport", "route", "boarding", "timing", "timings",
     "fee", "fees", "admission", "admissions", "bonafide", "leave", "card", "pink card",
-    "yellow card", "outpass", "warden", "hod", "principal", "faculty", "mentor",
-    "club", "clubs", "yantramanav", "drones", "ar-vr", "idea lab", "hackathon",
-    "workshop", "placement", "placements", "recruiter", "package",
+    "yellow card", "outpass", "warden", "hod", "principal", "faculty", "mentor", "professor",
+    "dean", "staff", "office", "offices", "building", "room", "venue", "auditorium",
+    "lab", "laboratory", "location", "directions",
+    "club", "clubs", "yantramanav", "drones", "ar-vr", "idea lab", "hackathon", "hackathons",
+    "workshop", "workshops", "placement", "placements", "recruiter", "package",
     "biotechnology", "cse", "ece", "mech", "freshers", "pongal", "culturals",
     "rules", "regulations", "facility", "facilities", "canteen", "library",
-    "reopening", "working day", "working days", "holiday", "holidays"
+    "reopening", "working day", "working days", "holiday", "holidays",
+    "opportunity", "opportunities", "internship", "internships", "training",
+    "seminar", "seminars", "competition", "competitions", "scholarship", "scholarships",
+    "deadline", "deadlines", "video", "videos", "social", "post", "posts", "pulse"
 }
 
 def classify_intent(query: str) -> str:
@@ -56,27 +61,7 @@ def classify_intent(query: str) -> str:
     if not q_clean:
         return INTENT_GENERAL
 
-    # 1. Direct match on greetings
-    for pat in GREETING_PATTERNS:
-        if re.search(pat, q_clean):
-            # If the user says "Good morning, what is the hostel menu?", that's a college query!
-            if any(k in q_clean for k in COLLEGE_SPECIFIC_KEYWORDS):
-                return INTENT_COLLEGE
-            return INTENT_GENERAL
-
-    # 2. Direct match on polite/gratitude/closing
-    for pat in POLITE_PATTERNS:
-        if re.search(pat, q_clean):
-            if any(k in q_clean for k in COLLEGE_SPECIFIC_KEYWORDS):
-                return INTENT_COLLEGE
-            return INTENT_GENERAL
-
-    # 3. Direct match on bot identity / joke / help
-    for pat in BOT_IDENTITY_PATTERNS:
-        if re.search(pat, q_clean):
-            return INTENT_GENERAL
-
-    # 4. Check for general coding / science / AI educational questions
+    # 1. Check for general coding / science / AI educational questions first
     general_educational_starts = [
         "what is python", "explain python", "how does python",
         "what is machine learning", "explain machine learning",
@@ -88,13 +73,45 @@ def classify_intent(query: str) -> str:
     if any(q_clean.startswith(prefix) for prefix in general_educational_starts):
         return INTENT_GENERAL
 
-    # 5. Check for college-specific keywords
+    # 2. Direct match on greetings
+    for pat in GREETING_PATTERNS:
+        if re.search(pat, q_clean):
+            # If the user says "Good morning, what is the hostel menu?", that's a college query!
+            if any(k in q_clean for k in COLLEGE_SPECIFIC_KEYWORDS):
+                return INTENT_COLLEGE
+            return INTENT_GENERAL
+
+    # 3. Direct match on polite/gratitude/closing
+    for pat in POLITE_PATTERNS:
+        if re.search(pat, q_clean):
+            if any(k in q_clean for k in COLLEGE_SPECIFIC_KEYWORDS):
+                return INTENT_COLLEGE
+            return INTENT_GENERAL
+
+    # 4. Direct match on bot identity / joke / help
+    for pat in BOT_IDENTITY_PATTERNS:
+        if re.search(pat, q_clean):
+            return INTENT_GENERAL
+
+    # 5. Check for college-specific keywords or location questions
     words = re.findall(r"\w+", q_clean)
     if any(w in COLLEGE_SPECIFIC_KEYWORDS for w in words):
         return INTENT_COLLEGE
 
-    # 6. Default handling: If query asks "how many semesters", "when are tests", "where is", "rules", etc.
-    college_phrases = ["semester", "semesters", "exam", "exams", "test", "tests", "rules", "timing", "timings"]
+    # 6. Check for location / guidance phrases ("where should i go", "where is", "how do i reach")
+    if (
+        "where should i go" in q_clean or
+        "where is" in q_clean or
+        "where can i find" in q_clean or
+        "which office" in q_clean or
+        "which room" in q_clean or
+        "which building" in q_clean or
+        "how do i contact" in q_clean
+    ):
+        return INTENT_COLLEGE
+
+    # 7. Check for general college inquiry terms
+    college_phrases = ["semester", "semesters", "exam", "exams", "test", "tests", "rules", "timing", "timings", "fee", "fees"]
     if any(p in q_clean for p in college_phrases):
         return INTENT_COLLEGE
 

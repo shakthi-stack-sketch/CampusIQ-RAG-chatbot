@@ -43,6 +43,13 @@ QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
 WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "base")
 
 # ==========================================
+# AUTHENTICATION & JWT SECURITY
+# ==========================================
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "campusiq-pec-super-secure-production-secret-key-2026-genlab-token")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+JWT_ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_DAYS", "30"))
+
+# ==========================================
 # VERIFIED OFFICIAL PEC SOURCES
 # ==========================================
 COLLEGE_NAME = "Prathyusha Engineering College"

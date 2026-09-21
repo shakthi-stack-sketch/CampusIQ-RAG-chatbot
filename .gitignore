@@ -2,3 +2,6 @@ venv/
 .env
 vectorstore/
 __pycache__/
+node_modules/
+data/campusiq_conversations.db
+data/user_vault/

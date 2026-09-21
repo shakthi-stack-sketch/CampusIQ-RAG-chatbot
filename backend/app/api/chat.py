@@ -61,7 +61,7 @@ import re
 
 def contextualize_followup_query(current_query: str, history: list) -> str:
     """
-    Contextualize follow-up questions (e.g. 'What about Tuesday?', 'And dinner?', 'What about girls?')
+    Contextualize follow-up questions (e.g. 'What about Tuesday?', 'Which one is related to AI?', 'What about girls?')
     using previous conversation turns so retrieval is fully grounded and query-aware.
     """
     if not history:
@@ -69,7 +69,7 @@ def contextualize_followup_query(current_query: str, history: list) -> str:
 
     q_clean = current_query.strip().lower()
 
-    # Find the last user message from conversation history
+    # Find the last user message and assistant message from conversation history
     last_user_query = ""
     for msg in reversed(history):
         if msg.get("role") == "user":
@@ -82,21 +82,43 @@ def contextualize_followup_query(current_query: str, history: list) -> str:
     days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
     meals = ["breakfast", "lunch", "snacks", "dinner"]
 
-    # Detect follow-up signals
-    is_followup = (
-        bool(re.match(r"^(what|how)\s+about\b", q_clean)) or
-        bool(re.match(r"^and\s+(what|how|for|on|about)\b", q_clean)) or
-        bool(re.match(r"^what\s+(is|for|on)\s+(it|that)\b", q_clean)) or
-        (len(q_clean.split()) <= 4 and any(d in q_clean for d in days + meals + ["girls", "boys", "formal", "casual", "leave", "outpass", "timing", "timings"]))
+    # Detect follow-up signals: starts with conversational inquiry or pronouns
+    followup_starters = [
+        r"^(what|how)\s+about\b",
+        r"^and\s+(what|how|for|on|about|which|where|when)\b",
+        r"^what\s+(is|for|on)\s+(it|that)\b",
+        r"^which\s+(one|ones|of\s+them|of\s+these|club|event|domain|department)\b",
+        r"^(is|are)\s+there\s+(any|more)\b",
+        r"^tell\s+me\s+more\b",
+        r"^can\s+you\s+elaborate\b",
+        r"^who\s+(can\s+join|is\s+in\s+charge|is\s+the\s+speaker)\b",
+        r"^where\s+is\s+(that|it|this)\b",
+        r"^when\s+is\s+(that|it|this)\b",
+        r"^how\s+to\s+(join|apply|participate)\b"
+    ]
+    is_followup = any(bool(re.search(p, q_clean)) for p in followup_starters) or (
+        len(q_clean.split()) <= 6 and any(w in q_clean for w in [
+            "which", "one", "more", "that", "it", "they", "related", "ai", "timing", "timings",
+            "girls", "boys", "formal", "casual", "leave", "outpass", "cost", "fee", "eligibility"
+        ] + days + meals)
     )
 
     if not is_followup:
         return current_query
 
     last_lower = last_user_query.lower()
+
+    # 1. Clubs & Student Development context
+    if any(w in last_lower for w in ["club", "clubs", "yantramanav", "drones", "acm", "pace", "pals", "idea lab"]):
+        return f"{current_query} college clubs technical innovation Google Developer Club Drones Yantramanav"
+
+    # 2. Opportunities, Hackathons & Workshops context
+    if any(w in last_lower for w in ["opportunity", "opportunities", "hackathon", "workshop", "internship", "seminar"]):
+        return f"{current_query} college opportunities hackathons workshops seminars placement"
+
+    # 3. Mess Menu context
     menu_indicators = ["menu", "mess", "breakfast", "lunch", "snacks", "dinner", "food", "eat"]
     is_menu_prev = any(w in last_lower for w in menu_indicators)
-
     current_has_day = any(d in q_clean for d in days)
     current_has_meal = any(m in q_clean for m in meals)
 
@@ -121,18 +143,27 @@ def contextualize_followup_query(current_query: str, history: list) -> str:
             return f"{current_query} hostel mess menu"
         elif current_has_meal:
             return f"{current_query} hostel mess menu"
+        return f"{current_query} hostel mess menu"
 
+    # 4. Dress code context
     if any(w in last_lower for w in ["dress", "uniform", "wear", "attire"]):
         return f"{current_query} dress code"
 
-    if any(w in last_lower for w in ["hostel", "room", "warden", "leave"]):
+    # 5. Hostel rules context
+    if any(w in last_lower for w in ["hostel", "room", "warden", "leave", "card"]):
         return f"{current_query} hostel rules facilities"
 
+    # 6. Transport context
     if any(w in last_lower for w in ["bus", "transport", "route", "boarding"]):
         return f"{current_query} bus timings"
 
+    # 7. Academics & Exams context
     if any(w in last_lower for w in ["exam", "iat", "semester", "academic", "calendar"]):
         return f"{current_query} academic calendar examinations"
+
+    # 8. Locations & Offices context
+    if any(w in last_lower for w in ["where", "office", "location", "room", "building", "venue", "auditorium"]):
+        return f"{current_query} college offices campus locations"
 
     return f"{current_query} {last_user_query}"
 
@@ -206,10 +237,21 @@ def handle_chat_message(req: ChatRequest):
             context_str = context_data["context_str"]
             potential_sources = context_data["sources"]
 
+            conv_hist_text = ""
+            if history_messages:
+                recent_turns = history_messages[-2:]
+                lines = []
+                for m in recent_turns:
+                    role_name = "Student" if m.get("role") == "user" else "CampusIQ"
+                    snippet = m.get("content", "").strip()[:300]
+                    lines.append(f"{role_name}: {snippet}")
+                conv_hist_text = "\n".join(lines)
+
             answer = generate_grounded_answer(
                 query=query,
                 context_str=context_str,
-                sources=potential_sources
+                sources=potential_sources,
+                conversation_history_text=conv_hist_text
             )
 
             # If the model indicates missing verified information, omit sources

@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import { marked } from 'marked';
 import { 
-  Copy, Check, Volume2, ExternalLink, Globe, BookOpen 
+  Copy, Check, Volume2, ExternalLink, Globe, BookOpen, FolderLock 
 } from 'lucide-react';
 import { LinkedinIcon, InstagramIcon, YoutubeIcon } from './BrandIcons';
+import ActionCards from './ActionCards';
 
-export default function MessageItem({ message }) {
+export default function MessageItem({
+  message,
+  userQuestion,
+  onSave,
+  onUnsave,
+  isSaved,
+  onAskFollowup,
+  onExploreClubs
+}) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -140,6 +149,16 @@ export default function MessageItem({ message }) {
               </button>
             </div>
 
+            {/* CampusIQ Action Cards */}
+            <ActionCards
+              message={message}
+              onSave={() => onSave && onSave(message, userQuestion)}
+              onUnsave={() => onUnsave && onUnsave(message.id)}
+              isSaved={isSaved}
+              onAskFollowup={onAskFollowup}
+              onExploreClubs={onExploreClubs}
+            />
+
             {/* Verified Sources Section */}
             {message.sources && message.sources.length > 0 && (
               <div
@@ -162,8 +181,17 @@ export default function MessageItem({ message }) {
                   color: 'var(--accent-burgundy)',
                   marginBottom: '8px'
                 }}>
-                  <BookOpen size={13} />
-                  <span>Verified Source</span>
+                  {message.sources[0]?.platform === 'Personal Knowledge Vault' ? (
+                    <>
+                      <FolderLock size={13} color="var(--accent-gold)" />
+                      <span style={{ color: 'var(--accent-gold)' }}>Personal Knowledge Vault (My Documents)</span>
+                    </>
+                  ) : (
+                    <>
+                      <BookOpen size={13} />
+                      <span>Verified College Source</span>
+                    </>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

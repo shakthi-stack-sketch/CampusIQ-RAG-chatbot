@@ -13,7 +13,14 @@ export default function ChatArea({
   onOpenVoiceRecorder,
   selectedCategory,
   onSelectCategory,
-  onClearCategory
+  onClearCategory,
+  savedAnswerIds,
+  onSaveAnswer,
+  onUnsaveAnswer,
+  userProfile,
+  onOpenMyCampus,
+  currentUser,
+  onOpenAuth
 }) {
   const scrollContainerRef = useRef(null);
   const isNearBottomRef = useRef(true);
@@ -87,6 +94,10 @@ export default function ChatArea({
           <WelcomeHero
             onSelectPrompt={(prompt) => onSendMessage(prompt)}
             onSelectCategory={(cat) => onSelectCategory(cat)}
+            userProfile={userProfile}
+            onOpenMyCampus={onOpenMyCampus}
+            currentUser={currentUser}
+            onOpenAuth={onOpenAuth}
           />
         ) : (
           <div style={{
@@ -96,9 +107,22 @@ export default function ChatArea({
             display: 'flex',
             flexDirection: 'column'
           }}>
-            {messages.map((msg, idx) => (
-              <MessageItem key={msg.id || idx} message={msg} />
-            ))}
+            {messages.map((msg, idx) => {
+              const prevUserMsg = [...messages.slice(0, idx)].reverse().find(m => m.role === 'user');
+              const isSaved = savedAnswerIds?.has(msg.id);
+              return (
+                <MessageItem
+                  key={msg.id || idx}
+                  message={msg}
+                  userQuestion={prevUserMsg?.content || ''}
+                  onSave={onSaveAnswer}
+                  onUnsave={onUnsaveAnswer}
+                  isSaved={isSaved}
+                  onAskFollowup={(q) => onSendMessage(q)}
+                  onExploreClubs={() => onSendMessage("What clubs and innovation domains are available at PEC?")}
+                />
+              );
+            })}
 
             {isLoading && <LoadingIndicator />}
             <div style={{ height: '8px', flexShrink: 0 }} />

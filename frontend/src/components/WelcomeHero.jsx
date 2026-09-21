@@ -48,7 +48,51 @@ const EXAMPLE_QUESTIONS = [
   }
 ];
 
-export default function WelcomeHero({ onSelectPrompt, onSelectCategory }) {
+export default function WelcomeHero({ onSelectPrompt, onSelectCategory, userProfile, onOpenMyCampus, currentUser, onOpenAuth }) {
+  // Tailor sample questions if profile has specific focus
+  let activeQuestions = [...EXAMPLE_QUESTIONS];
+
+  if (userProfile?.role === 'prospective_student') {
+    activeQuestions = [
+      {
+        category: 'Admissions',
+        question: 'Where is the admissions office and what are the procedures?',
+        snippet: 'Official guidance on B.E/B.Tech programmes and college administration.'
+      },
+      {
+        category: 'Campus Facilities',
+        question: 'What facilities and laboratories are available on campus?',
+        snippet: 'Overview of 45-acre campus, AR-VR CoE, Wi-Fi, and sports amenities.'
+      },
+      {
+        category: 'Placements',
+        question: 'What are the placement highlights and top recruiters?',
+        snippet: 'Verified records of top recruiters like Zoho, Cognizant, and packages.'
+      },
+      {
+        category: 'Hostel & Mess',
+        question: 'What are the hostel accommodation facilities and mess menu?',
+        snippet: 'Hygienic rooms, food menus, Wi-Fi, and security protocols.'
+      },
+      {
+        category: 'Innovation',
+        question: 'What clubs and innovation domains are available?',
+        snippet: 'Explore 13 Innovation Domains, Google Developer Club, and Idea Lab.'
+      },
+      {
+        category: 'Dress Code',
+        question: "What's the dress code on Monday?",
+        snippet: 'Verified norms for formal and casual attire on campus.'
+      }
+    ];
+  } else if (userProfile?.department?.includes('Computer') || userProfile?.department?.includes('Intelligence')) {
+    activeQuestions[0] = {
+      category: 'AI & Hackathons',
+      question: 'Was there any AI workshop or national hackathon recently?',
+      snippet: 'Generative AI workshop and PRATHYUSHA IGNITE 2026 hackathon updates.'
+    };
+  }
+
   return (
     <div style={{
       maxWidth: '860px',
@@ -113,10 +157,61 @@ export default function WelcomeHero({ onSelectPrompt, onSelectCategory }) {
         color: 'var(--text-muted)',
         maxWidth: '580px',
         lineHeight: 1.55,
-        marginBottom: '32px'
+        marginBottom: '18px'
       }}>
         Ask about academics, student services, campus life, hostel information, clubs, events, announcements, opportunities, and other verified college information.
       </p>
+
+      {/* Entry Mode Status & Subtle Switcher */}
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '6px 16px',
+        backgroundColor: 'var(--bg-secondary)',
+        borderRadius: '24px',
+        border: '1px solid var(--border-subtle)',
+        marginBottom: '30px'
+      }}>
+        {currentUser ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              Signed in as <strong style={{ color: 'var(--accent-burgundy)' }}>{currentUser.name}</strong>
+            </span>
+          </div>
+        ) : (
+          <>
+            <span style={{
+              fontSize: '0.80rem',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--accent-gold)' }} />
+              Browsing as <strong>Guest</strong>
+            </span>
+            <span style={{ color: 'var(--border-subtle)' }}>•</span>
+            <button
+              onClick={onOpenAuth}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-burgundy)',
+                fontWeight: 700,
+                fontSize: '0.80rem',
+                cursor: 'pointer',
+                padding: '2px 4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              Sign In / Create Account
+            </button>
+          </>
+        )}
+      </div>
 
       {/* 3. Explore CampusIQ Knowledge Categories */}
       <div style={{ width: '100%', marginBottom: '32px' }}>
@@ -206,7 +301,7 @@ export default function WelcomeHero({ onSelectPrompt, onSelectCategory }) {
           gap: '12px',
           textAlign: 'left'
         }}>
-          {EXAMPLE_QUESTIONS.map((ex, idx) => (
+          {activeQuestions.map((ex, idx) => (
             <div
               key={idx}
               onClick={() => onSelectPrompt(ex.question)}

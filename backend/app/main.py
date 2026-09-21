@@ -9,6 +9,10 @@ from backend.app.database.db import init_db
 from backend.app.api.chat import router as chat_router
 from backend.app.api.voice import router as voice_router
 from backend.app.api.knowledge import router as knowledge_router
+from backend.app.api.saved import router as saved_router
+from backend.app.api.pulse import router as pulse_router
+from backend.app.api.vault import router as vault_router
+from backend.app.api.auth import router as auth_router
 from backend.app.rag.vectorstore import vectorstore_manager
 from backend.app.api.knowledge import sync_knowledge_base
 
@@ -28,9 +32,13 @@ app.add_middleware(
 )
 
 # Register Routers
+app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(voice_router)
 app.include_router(knowledge_router)
+app.include_router(saved_router)
+app.include_router(pulse_router)
+app.include_router(vault_router)
 
 @app.on_event("startup")
 def startup_event():
